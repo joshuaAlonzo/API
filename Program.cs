@@ -18,6 +18,17 @@ using Api.UserRoleModule;
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddInMemoryCollection(ConnEnvFile.LoadConfigurationValues());
 
+// Startup environment safety check
+using (var loggerFactory = LoggerFactory.Create(b => b.AddConsole()))
+{
+    var startupLogger = loggerFactory.CreateLogger("Startup");
+    var env = builder.Environment.EnvironmentName;
+    if (string.IsNullOrWhiteSpace(env))
+        startupLogger.LogWarning("ASPNETCORE_ENVIRONMENT is not set. Defaulting to Production behavior. Ensure this is intentional.");
+    else
+        startupLogger.LogInformation("Running in environment: {Environment}", env);
+}
+
 // Add services to the container.
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -194,6 +205,8 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseHttpsRedirection();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -202,10 +215,6 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint($"/swagger/v1/swagger.json", "Generated API V1");
         options.RoutePrefix = string.Empty;
     });
-}
-else
-{
-    app.UseHttpsRedirection();
 }
 app.UseAuthentication();
 app.UseAuthorization();
@@ -216,7 +225,8 @@ app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
 // Add database connection test endpoint
-app.MapGet("/db-test", async (MyCon db) =>
+// NOTE: This endpoint is unauthenticated. Consider removing or auth-gating it for production builds.
+app.MapGet("/db-test", async (MyCon db, ILogger<Program> logger) =>
 {
     try
     {
@@ -236,8 +246,9 @@ app.MapGet("/db-test", async (MyCon db) =>
     }
     catch (Exception ex)
     {
+        logger.LogError(ex, "Database connection test failed");
         return Results.Problem(
-            detail: ex.Message,
+            detail: "Database connection error",
             statusCode: 500,
             title: "Database connection error"
         );

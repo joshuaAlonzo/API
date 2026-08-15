@@ -1,0 +1,40 @@
+## .NET / ASP.NET Core
+
+# Build output
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+.vs/
+
+# NuGet packages
+packages/
+*.nupkg
+
+# Publish output
+publish/
+out/
+
+## Environment & Secrets
+
+# Local config with real secrets — NEVER commit this
+conn.env
+
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+
+# Keep example file (safe to commit)
+!conn.env.example
+
+## OS
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
