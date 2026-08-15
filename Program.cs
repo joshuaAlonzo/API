@@ -205,7 +205,11 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-app.UseHttpsRedirection();
+// Skip HTTPS redirection in Development — no local cert required.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 if (app.Environment.IsDevelopment())
 {
