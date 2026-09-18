@@ -30,7 +30,6 @@ namespace Api.Controllers
         {
             public int    UserId    { get; set; }
             public string Activity  { get; set; } = string.Empty;
-            public string? IpAddress { get; set; }
         }
 
         public sealed class SearchByFilterRequest
@@ -207,7 +206,7 @@ namespace Api.Controllers
                     UserId       = request.UserId,
                     Activity     = request.Activity,
                     ActivityDate = DateTime.UtcNow,
-                    IpAddress    = request.IpAddress,
+                    IpAddress    = HttpContext.Connection.RemoteIpAddress?.ToString(),
                 };
 
                 await _repository.AddAsync(entity);

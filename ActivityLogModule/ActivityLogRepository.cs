@@ -20,21 +20,50 @@ namespace Api.ActivityLogModule
         {
             try
             {
+                int logId = ReadValue<int>(reader, "log_id", 0);
+                if (logId == 0) logId = ReadValue<int>(reader, "id", 0);
+                if (logId == 0) logId = ReadValue<int>(reader, "activity_id", 0);
+                if (logId == 0) logId = ReadValue<int>(reader, "activity_log_id", 0);
+
+                int userId = ReadValue<int>(reader, "user_id", 0);
+                if (userId == 0) userId = ReadValue<int>(reader, "userId", 0);
+                if (userId == 0) userId = ReadValue<int>(reader, "admin_id", 0);
+
+                string activity = ReadValue<string>(reader, "activity", string.Empty);
+                if (string.IsNullOrEmpty(activity)) activity = ReadValue<string>(reader, "action", string.Empty);
+                if (string.IsNullOrEmpty(activity)) activity = ReadValue<string>(reader, "description", string.Empty);
+                if (string.IsNullOrEmpty(activity)) activity = ReadValue<string>(reader, "details", string.Empty);
+                if (string.IsNullOrEmpty(activity)) activity = ReadValue<string>(reader, "message", string.Empty);
+
+                DateTime activityDate = ReadValue<DateTime>(reader, "activity_date", DateTime.MinValue);
+                if (activityDate == DateTime.MinValue) activityDate = ReadValue<DateTime>(reader, "created_at", DateTime.MinValue);
+                if (activityDate == DateTime.MinValue) activityDate = ReadValue<DateTime>(reader, "timestamp", DateTime.MinValue);
+                if (activityDate == DateTime.MinValue) activityDate = ReadValue<DateTime>(reader, "date", DateTime.MinValue);
+                if (activityDate == DateTime.MinValue) activityDate = ReadValue<DateTime>(reader, "log_date", DateTime.MinValue);
+                if (activityDate == DateTime.MinValue) activityDate = DateTime.UtcNow;
+
+                string? ipAddress = ReadValue<string?>(reader, "ip_address", null);
+                if (string.IsNullOrEmpty(ipAddress)) ipAddress = ReadValue<string?>(reader, "ip", null);
+                if (string.IsNullOrEmpty(ipAddress)) ipAddress = ReadValue<string?>(reader, "ipaddress", null);
+
                 return new ActivityLog
                 {
-                    LogId        = ReadValue<int>(reader,      "log_id",       0),
-                    UserId       = ReadValue<int>(reader,      "user_id",      0),
-                    Activity     = ReadValue<string>(reader,   "activity",     string.Empty),
-                    ActivityDate = ReadValue<DateTime>(reader, "activity_date", DateTime.MinValue),
-                    IpAddress    = reader.IsDBNull(reader.GetOrdinal("ip_address"))
-                                       ? null
-                                       : reader.GetString(reader.GetOrdinal("ip_address")),
+                    LogId        = logId,
+                    UserId       = userId,
+                    Activity     = activity,
+                    ActivityDate = activityDate,
+                    IpAddress    = string.IsNullOrWhiteSpace(ipAddress) ? null : ipAddress,
                 };
             }
             catch (Exception ex)
             {
+                var colDetails = new List<string>();
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    colDetails.Add($"{reader.GetName(i)}={reader.GetValue(i)} ({reader.GetFieldType(i).Name})");
+                }
                 throw new InvalidOperationException(
-                    "Failed to map database row to ActivityLog. Check schema/type alignment.", ex);
+                    $"Failed to map database row to ActivityLog. Columns: [{string.Join(", ", colDetails)}]. Error: {ex.Message}", ex);
             }
         }
 
@@ -72,6 +101,8 @@ namespace Api.ActivityLogModule
         /// <summary>Inserts a new activity log row.</summary>
         public async Task AddAsync(ActivityLog entity)
         {
+            var dateToSave = entity.ActivityDate == DateTime.MinValue ? DateTime.UtcNow : entity.ActivityDate;
+
             const string sql =
                 "INSERT INTO \"activity_logs\" (\"user_id\", \"activity\", \"activity_date\", \"ip_address\") " +
                 "VALUES (@user_id, @activity, @activity_date, @ip_address)";
@@ -80,9 +111,7 @@ namespace Api.ActivityLogModule
             {
                 CreateParameter("user_id",       entity.UserId),
                 CreateParameter("activity",      entity.Activity),
-                CreateParameter("activity_date", entity.ActivityDate == DateTime.MinValue
-                                                    ? (object)DBNull.Value
-                                                    : entity.ActivityDate),
+                CreateParameter("activity_date", dateToSave.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)),
                 CreateParameter("ip_address",    (object?)entity.IpAddress ?? DBNull.Value),
             };
 

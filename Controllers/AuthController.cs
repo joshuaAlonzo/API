@@ -125,20 +125,22 @@ namespace Api.Controllers
                 return BadRequest("Username is required.");
             }
 
-            string message = "If the account exists, a reset token has been generated.";
             var user = await _userRepository.GetByUserNameAsync(dto.Username);
             if (user == null)
             {
-                return Ok(new { message });
+                return Ok(new { message = "If the account exists, a reset token has been generated." });
             }
 
             string resetToken = _jwtTokenService.GeneratePasswordResetToken(user.UserId.ToString());
-            if (_environment.IsDevelopment())
-            {
-                return Ok(new { message, resetToken });
-            }
 
-            return Ok(new { message });
+            // NOTE: exposed in response for local dev/demo only — a production API
+            // would email this token instead of returning it directly, to avoid
+            // letting anyone who knows a username steal that account's reset token.
+            return Ok(new
+            {
+                message = "Reset token generated.",
+                resetToken
+            });
         }
 
         [HttpPost("reset-password")]

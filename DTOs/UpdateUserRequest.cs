@@ -34,6 +34,4 @@ namespace Api.DTOs
         public int UserRoleId { get; set; }
     }
 
-    public class CreateUsermanRequest : UpdateUsermanRequest { }
-    public class CreateUserRequest : UpdateUserRequest { }
 }

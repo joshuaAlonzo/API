@@ -210,15 +210,145 @@ namespace Api.Main
         }
 
         /// <summary>
-        /// Reads a column value from the reader, coercing it to <typeparamref name="T"/>,
-        /// returning <paramref name="defaultValue"/> when the column is NULL.
+        /// Attempts to find a column ordinal by exact name, falling back to case-insensitive
+        /// matching and ignoring underscores to tolerate schema variations. Returns -1 if not found.
         /// </summary>
-        protected static T ReadValue<T>(DbDataReader reader, string columnName, T defaultValue)
+        protected static int FindColumnOrdinal(DbDataReader reader, string columnName)
         {
-            int ordinal = reader.GetOrdinal(columnName);
+            try
+            {
+                return reader.GetOrdinal(columnName);
+            }
+            catch
+            {
+                string normalized = columnName.Replace("_", "");
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    string name = reader.GetName(i);
+                    if (string.Equals(name, columnName, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(name.Replace("_", ""), normalized, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return i;
+                    }
+                }
+                return -1;
+            }
+        }
+
+        /// <summary>
+        /// Reads a DateTime value robustly from any SQLite storage format:
+        /// native provider conversion, ISO-8601 strings (with or without 'T', 'Z', offsets, ms),
+        /// or Unix timestamps (seconds or milliseconds). Returns defaultValue on failure.
+        /// </summary>
+        protected static DateTime ReadDateTime(DbDataReader reader, int ordinal, DateTime defaultValue)
+        {
             if (reader.IsDBNull(ordinal))
             {
                 return defaultValue;
+            }
+
+            // 1. Try provider conversion first
+            try
+            {
+                return reader.GetDateTime(ordinal);
+            }
+            catch
+            {
+                // Fall through to manual inspection
+            }
+
+            object value = reader.GetValue(ordinal);
+            if (value is DateTime dt)
+            {
+                return dt;
+            }
+
+            if (value is DateTimeOffset dto)
+            {
+                return dto.UtcDateTime;
+            }
+
+            // Numeric Unix timestamp support
+            if (value is long lVal)
+            {
+                if (lVal > 1_000_000_000_000L)
+                    return DateTimeOffset.FromUnixTimeMilliseconds(lVal).UtcDateTime;
+                if (lVal > 0)
+                    return DateTimeOffset.FromUnixTimeSeconds(lVal).UtcDateTime;
+            }
+
+            if (value is int iVal && iVal > 0)
+            {
+                return DateTimeOffset.FromUnixTimeSeconds(iVal).UtcDateTime;
+            }
+
+            if (value is double dVal && dVal > 0)
+            {
+                if (dVal > 1_000_000_000_000.0)
+                    return DateTimeOffset.FromUnixTimeMilliseconds((long)dVal).UtcDateTime;
+                if (dVal > 1_000_000.0)
+                    return DateTimeOffset.FromUnixTimeSeconds((long)dVal).UtcDateTime;
+                try { return DateTime.FromOADate(dVal); } catch { }
+            }
+
+            // String parsing with multiple format and culture attempts
+            string str = Convert.ToString(value, CultureInfo.InvariantCulture)?.Trim() ?? string.Empty;
+            if (string.IsNullOrEmpty(str))
+            {
+                return defaultValue;
+            }
+
+            if (DateTime.TryParse(str, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsedDt))
+            {
+                return parsedDt;
+            }
+
+            if (DateTime.TryParse(str, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDt))
+            {
+                return parsedDt;
+            }
+
+            if (DateTime.TryParse(str, CultureInfo.CurrentCulture, DateTimeStyles.None, out parsedDt))
+            {
+                return parsedDt;
+            }
+
+            if (DateTimeOffset.TryParse(str, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDto))
+            {
+                return parsedDto.UtcDateTime;
+            }
+
+            if (long.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedLong))
+            {
+                if (parsedLong > 1_000_000_000_000L)
+                    return DateTimeOffset.FromUnixTimeMilliseconds(parsedLong).UtcDateTime;
+                if (parsedLong > 0)
+                    return DateTimeOffset.FromUnixTimeSeconds(parsedLong).UtcDateTime;
+            }
+
+            return defaultValue;
+        }
+
+        /// <summary>
+        /// Reads a column value from the reader, coercing it to <typeparamref name="T"/>,
+        /// returning <paramref name="defaultValue"/> when the column is NULL or missing.
+        /// </summary>
+        protected static T ReadValue<T>(DbDataReader reader, string columnName, T defaultValue)
+        {
+            int ordinal = FindColumnOrdinal(reader, columnName);
+            if (ordinal < 0 || reader.IsDBNull(ordinal))
+            {
+                return defaultValue;
+            }
+
+            if (typeof(T) == typeof(DateTime))
+            {
+                return (T)(object)ReadDateTime(reader, ordinal, defaultValue is DateTime d ? d : DateTime.MinValue);
+            }
+
+            if (typeof(T) == typeof(DateTime?))
+            {
+                return (T)(object)ReadDateTime(reader, ordinal, DateTime.MinValue);
             }
 
             object value = reader.GetValue(ordinal);
@@ -273,10 +403,6 @@ namespace Api.Main
                 return (T)(object)Convert.ToSingle(value, CultureInfo.InvariantCulture);
             }
 
-            if (targetType == typeof(DateTime))
-            {
-                return (T)(object)Convert.ToDateTime(value, CultureInfo.InvariantCulture);
-            }
 
             if (targetType == typeof(Guid))
             {
