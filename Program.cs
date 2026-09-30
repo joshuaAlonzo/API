@@ -12,6 +12,7 @@ using Api.CartModule;
 using Api.CategoriesModule;
 using Api.MedicineModule;
 using Api.OrderModule;
+using Api.SuppliersModule;
 using Api.UserModule;
 using Api.UserRoleModule;
 
@@ -175,6 +176,13 @@ builder.Services.AddScoped<ICategoryRepository, CategoryRepository>(sp =>
 {
     var myCon = sp.GetRequiredService<MyCon>();
     return new CategoryRepository(myCon);
+});
+
+// Suppliers module
+builder.Services.AddScoped<ISupplierRepository, SupplierRepository>(sp =>
+{
+    var myCon = sp.GetRequiredService<MyCon>();
+    return new SupplierRepository(myCon);
 });
 
 var configuredCorsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()?
