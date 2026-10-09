@@ -202,6 +202,39 @@ namespace Api.Controllers
             }
         }
 
+        /// <summary>Cancel own order — UserAccess. Only allowed while status is Pending or Processing.</summary>
+        [HttpPut("{id:int}/cancel")]
+        [Authorize(Policy = "UserAccess")]
+        public async Task<ActionResult> CancelOwnOrder(int id)
+        {
+            try
+            {
+                var callerId = GetUserIdFromClaims();
+                var roleIdClaim = User.FindFirst("user_role_id")?.Value;
+                int roleId = int.TryParse(roleIdClaim, out int r) ? r : 0;
+
+                var existing = await _repository.GetByIdAsync(id, includeItems: false);
+                if (existing == null)
+                    return NotFound(new { message = "Order not found." });
+
+                // Customers may only cancel their own orders; admin/staff can cancel any
+                if (roleId == 3 && existing.UserId != callerId)
+                    return StatusCode(403, new { message = "You can only cancel your own orders." });
+
+                var cancellable = new[] { "pending", "processing" };
+                if (!Array.Exists(cancellable, s => string.Equals(s, existing.OrderStatus, StringComparison.OrdinalIgnoreCase)))
+                    return BadRequest(new { message = $"Order cannot be cancelled because its current status is '{existing.OrderStatus}'." });
+
+                await _repository.UpdateStatusAsync(id, "Cancelled");
+                return Ok(new { message = "Order cancelled successfully.", orderId = id, status = "Cancelled" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
         /// <summary>Delete an order — AdminAccess.</summary>
         [HttpDelete("{id:int}")]
         [Authorize(Policy = "AdminAccess")]

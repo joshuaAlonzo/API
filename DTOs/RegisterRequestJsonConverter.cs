@@ -77,6 +77,36 @@ namespace Api.DTOs
                     continue;
                 }
 
+                if (propertyName.Equals("region", comparison))
+                {
+                    dto.Region = ReadNullableString(ref reader, options);
+                    continue;
+                }
+
+                if (propertyName.Equals("province", comparison))
+                {
+                    dto.Province = ReadNullableString(ref reader, options);
+                    continue;
+                }
+
+                if (propertyName.Equals("city_municipality", comparison))
+                {
+                    dto.CityMunicipality = ReadNullableString(ref reader, options);
+                    continue;
+                }
+
+                if (propertyName.Equals("barangay", comparison))
+                {
+                    dto.Barangay = ReadNullableString(ref reader, options);
+                    continue;
+                }
+
+                if (propertyName.Equals("street", comparison))
+                {
+                    dto.Street = ReadNullableString(ref reader, options);
+                    continue;
+                }
+
                 reader.Skip();
             }
 
@@ -97,6 +127,12 @@ namespace Api.DTOs
                 writer.WriteString("contact_number", value.ContactNumber);
             else
                 writer.WriteNull("contact_number");
+
+            writer.WriteString("region",            value.Region ?? string.Empty);
+            writer.WriteString("province",          value.Province ?? string.Empty);
+            writer.WriteString("city_municipality",  value.CityMunicipality ?? string.Empty);
+            writer.WriteString("barangay",           value.Barangay ?? string.Empty);
+            writer.WriteString("street",             value.Street ?? string.Empty);
 
             writer.WriteEndObject();
         }

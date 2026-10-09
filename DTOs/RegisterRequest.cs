@@ -38,5 +38,20 @@ namespace Api.DTOs
 
         [JsonPropertyName("contact_number")]
         public string? ContactNumber { get; set; }
+
+        [JsonPropertyName("region")]
+        public string? Region { get; set; }
+
+        [JsonPropertyName("province")]
+        public string? Province { get; set; }
+
+        [JsonPropertyName("city_municipality")]
+        public string? CityMunicipality { get; set; }
+
+        [JsonPropertyName("barangay")]
+        public string? Barangay { get; set; }
+
+        [JsonPropertyName("street")]
+        public string? Street { get; set; }
     }
 }

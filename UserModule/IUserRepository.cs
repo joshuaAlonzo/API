@@ -13,6 +13,7 @@ namespace Api.UserModule
         Task AddAsync(User entity);
         Task UpdateAsync(User entity);
         Task<User?> GetByUserNameAsync(string userName);
+        Task<User?> GetByEmailOrPhoneAsync(string emailOrPhone);
         Task DeleteAllAsync();
         Task<IEnumerable<User>> GetFilteredExactAsync(IReadOnlyDictionary<string, object?> filters);
         Task<IEnumerable<User>> GetFilteredLikeAsync(IReadOnlyDictionary<string, object?> filters);

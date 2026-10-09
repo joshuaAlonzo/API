@@ -18,15 +18,20 @@ namespace Api.UserModule
             {
                 return new User
                 {
-                    UserId        = ReadValue<int>(reader,      "user_id",        0),
-                    FirstName     = ReadValue<string>(reader,   "first_name",     string.Empty),
-                    LastName      = ReadValue<string>(reader,   "last_name",      string.Empty),
-                    Email         = ReadValue<string>(reader,   "email",          string.Empty),
-                    ContactNumber = ReadValue<string?>(reader,  "contact_number", null),
-                    Username      = ReadValue<string>(reader,   "username",       string.Empty),
-                    PasswordHash  = ReadValue<string>(reader,   "password_hash",  string.Empty),
-                    RoleId        = ReadValue<int>(reader,      "role_id",        0),
-                    CreatedAt     = ReadValue<DateTime>(reader, "created_at",     DateTime.MinValue),
+                    UserId           = ReadValue<int>(reader,      "user_id",          0),
+                    FirstName        = ReadValue<string>(reader,   "first_name",       string.Empty),
+                    LastName         = ReadValue<string>(reader,   "last_name",        string.Empty),
+                    Email            = ReadValue<string>(reader,   "email",            string.Empty),
+                    ContactNumber    = ReadValue<string?>(reader,  "contact_number",   null),
+                    Region           = ReadValue<string?>(reader,  "Region",           null),
+                    Province         = ReadValue<string?>(reader,  "Province",         null),
+                    CityMunicipality = ReadValue<string?>(reader,  "City_Municipality",null),
+                    Barangay         = ReadValue<string?>(reader,  "Barangay",         null),
+                    Street           = ReadValue<string?>(reader,  "Street",           null),
+                    Username         = ReadValue<string>(reader,   "username",         string.Empty),
+                    PasswordHash     = ReadValue<string>(reader,   "password_hash",    string.Empty),
+                    RoleId           = ReadValue<int>(reader,      "role_id",          0),
+                    CreatedAt        = ReadValue<DateTime>(reader, "created_at",       DateTime.MinValue),
                 };
             }
             catch (Exception ex)
@@ -66,6 +71,15 @@ namespace Api.UserModule
             return results.FirstOrDefault();
         }
 
+        public async Task<User?> GetByEmailOrPhoneAsync(string emailOrPhone)
+        {
+            var results = await ExecuteReaderToListAsync(
+                "SELECT * FROM \"users\" WHERE \"email\" = @identifier COLLATE NOCASE OR \"contact_number\" = @identifier",
+                MapReaderToUser,
+                new[] { CreateParameter("identifier", emailOrPhone) });
+            return results.FirstOrDefault();
+        }
+
         // ---------------------------------------------------------------
         //  Write
         // ---------------------------------------------------------------
@@ -75,18 +89,23 @@ namespace Api.UserModule
         {
             const string sql =
                 "INSERT INTO \"users\" " +
-                "(\"first_name\", \"last_name\", \"email\", \"contact_number\", \"username\", \"password_hash\", \"role_id\") " +
-                "VALUES (@first_name, @last_name, @email, @contact_number, @username, @password_hash, @role_id)";
+                "(\"first_name\", \"last_name\", \"email\", \"contact_number\", \"Region\", \"Province\", \"City_Municipality\", \"Barangay\", \"Street\", \"username\", \"password_hash\", \"role_id\") " +
+                "VALUES (@first_name, @last_name, @email, @contact_number, @region, @province, @city_municipality, @barangay, @street, @username, @password_hash, @role_id)";
 
             await ExecuteNonQueryAsync(sql, new[]
             {
-                CreateParameter("first_name",     entity.FirstName),
-                CreateParameter("last_name",      entity.LastName),
-                CreateParameter("email",          entity.Email),
-                CreateParameter("contact_number", (object?)entity.ContactNumber ?? DBNull.Value),
-                CreateParameter("username",       entity.Username),
-                CreateParameter("password_hash",  entity.PasswordHash),
-                CreateParameter("role_id",        entity.RoleId),
+                CreateParameter("first_name",        entity.FirstName),
+                CreateParameter("last_name",         entity.LastName),
+                CreateParameter("email",             entity.Email),
+                CreateParameter("contact_number",    (object?)entity.ContactNumber    ?? DBNull.Value),
+                CreateParameter("region",            (object?)entity.Region           ?? DBNull.Value),
+                CreateParameter("province",          (object?)entity.Province         ?? DBNull.Value),
+                CreateParameter("city_municipality", (object?)entity.CityMunicipality ?? DBNull.Value),
+                CreateParameter("barangay",          (object?)entity.Barangay         ?? DBNull.Value),
+                CreateParameter("street",            (object?)entity.Street           ?? DBNull.Value),
+                CreateParameter("username",          entity.Username),
+                CreateParameter("password_hash",     entity.PasswordHash),
+                CreateParameter("role_id",           entity.RoleId),
             });
         }
 
@@ -99,6 +118,11 @@ namespace Api.UserModule
                 "\"last_name\" = @last_name, " +
                 "\"email\" = @email, " +
                 "\"contact_number\" = @contact_number, " +
+                "\"Region\" = @region, " +
+                "\"Province\" = @province, " +
+                "\"City_Municipality\" = @city_municipality, " +
+                "\"Barangay\" = @barangay, " +
+                "\"Street\" = @street, " +
                 "\"username\" = @username, " +
                 "\"password_hash\" = @password_hash, " +
                 "\"role_id\" = @role_id " +
@@ -106,14 +130,19 @@ namespace Api.UserModule
 
             await ExecuteNonQueryAsync(sql, new[]
             {
-                CreateParameter("user_id",        entity.UserId),
-                CreateParameter("first_name",     entity.FirstName),
-                CreateParameter("last_name",      entity.LastName),
-                CreateParameter("email",          entity.Email),
-                CreateParameter("contact_number", (object?)entity.ContactNumber ?? DBNull.Value),
-                CreateParameter("username",       entity.Username),
-                CreateParameter("password_hash",  entity.PasswordHash),
-                CreateParameter("role_id",        entity.RoleId),
+                CreateParameter("user_id",           entity.UserId),
+                CreateParameter("first_name",        entity.FirstName),
+                CreateParameter("last_name",         entity.LastName),
+                CreateParameter("email",             entity.Email),
+                CreateParameter("contact_number",    (object?)entity.ContactNumber    ?? DBNull.Value),
+                CreateParameter("region",            (object?)entity.Region           ?? DBNull.Value),
+                CreateParameter("province",          (object?)entity.Province         ?? DBNull.Value),
+                CreateParameter("city_municipality", (object?)entity.CityMunicipality ?? DBNull.Value),
+                CreateParameter("barangay",          (object?)entity.Barangay         ?? DBNull.Value),
+                CreateParameter("street",            (object?)entity.Street           ?? DBNull.Value),
+                CreateParameter("username",          entity.Username),
+                CreateParameter("password_hash",     entity.PasswordHash),
+                CreateParameter("role_id",           entity.RoleId),
             });
         }
 

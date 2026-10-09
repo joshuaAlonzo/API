@@ -5,6 +5,6 @@ namespace Api.DTOs
     public class ForgotPasswordRequest
     {
         [Required]
-        public string Username { get; set; } = string.Empty;
+        public string EmailOrPhone { get; set; } = string.Empty;
     }
 }

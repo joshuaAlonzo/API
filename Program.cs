@@ -15,6 +15,9 @@ using Api.OrderModule;
 using Api.SuppliersModule;
 using Api.UserModule;
 using Api.UserRoleModule;
+using Api.MedicineBatchModule;
+using Api.PurchaseOrderModule;
+using Api.InventoryTransactionModule;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddInMemoryCollection(ConnEnvFile.LoadConfigurationValues());
@@ -183,6 +186,39 @@ builder.Services.AddScoped<ISupplierRepository, SupplierRepository>(sp =>
 {
     var myCon = sp.GetRequiredService<MyCon>();
     return new SupplierRepository(myCon);
+});
+
+// MedicineBatch module
+builder.Services.AddScoped<IMedicineBatchRepository, MedicineBatchRepository>(sp =>
+{
+    var myCon = sp.GetRequiredService<MyCon>();
+    return new MedicineBatchRepository(myCon);
+});
+
+// PurchaseOrder module
+builder.Services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>(sp =>
+{
+    var myCon = sp.GetRequiredService<MyCon>();
+    return new PurchaseOrderRepository(myCon);
+});
+builder.Services.AddScoped<IPurchaseOrderItemRepository, PurchaseOrderItemRepository>(sp =>
+{
+    var myCon = sp.GetRequiredService<MyCon>();
+    return new PurchaseOrderItemRepository(myCon);
+});
+
+// InventoryTransaction module
+builder.Services.AddScoped<IInventoryTransactionRepository, InventoryTransactionRepository>(sp =>
+{
+    var myCon = sp.GetRequiredService<MyCon>();
+    return new InventoryTransactionRepository(myCon);
+});
+
+// OrderStatusHistory module
+builder.Services.AddScoped<IOrderStatusHistoryRepository, OrderStatusHistoryRepository>(sp =>
+{
+    var myCon = sp.GetRequiredService<MyCon>();
+    return new OrderStatusHistoryRepository(myCon);
 });
 
 var configuredCorsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()?

@@ -120,25 +120,25 @@ namespace Api.Controllers
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Username))
+            if (string.IsNullOrWhiteSpace(dto.EmailOrPhone))
             {
-                return BadRequest("Username is required.");
+                return BadRequest("Email or phone number is required.");
             }
 
-            var user = await _userRepository.GetByUserNameAsync(dto.Username);
+            var user = await _userRepository.GetByEmailOrPhoneAsync(dto.EmailOrPhone);
             if (user == null)
             {
-                return Ok(new { message = "If the account exists, a reset token has been generated." });
+                return Ok(new { message = "If the account exists, an OTP has been sent." });
             }
 
             string resetToken = _jwtTokenService.GeneratePasswordResetToken(user.UserId.ToString());
 
             // NOTE: exposed in response for local dev/demo only — a production API
-            // would email this token instead of returning it directly, to avoid
-            // letting anyone who knows a username steal that account's reset token.
+            // would email this OTP instead of returning it directly, to avoid
+            // letting anyone who knows an email/phone steal that account's reset token.
             return Ok(new
             {
-                message = "Reset token generated.",
+                message = "OTP generated.",
                 resetToken
             });
         }

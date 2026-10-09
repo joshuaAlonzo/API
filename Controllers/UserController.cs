@@ -28,14 +28,19 @@ namespace Api.Controllers
         {
             return new UserResponse
             {
-                UserId = entity.UserId,
-                FirstName = entity.FirstName,
-                LastName = entity.LastName,
-                Email = entity.Email,
-                ContactNumber = entity.ContactNumber,
-                Username = entity.Username,
-                RoleId = entity.RoleId,
-                CreatedAt = entity.CreatedAt
+                UserId           = entity.UserId,
+                FirstName        = entity.FirstName,
+                LastName         = entity.LastName,
+                Email            = entity.Email,
+                ContactNumber    = entity.ContactNumber,
+                Region           = entity.Region,
+                Province         = entity.Province,
+                CityMunicipality = entity.CityMunicipality,
+                Barangay         = entity.Barangay,
+                Street           = entity.Street,
+                Username         = entity.Username,
+                RoleId           = entity.RoleId,
+                CreatedAt        = entity.CreatedAt
             };
         }
 
@@ -198,14 +203,19 @@ namespace Api.Controllers
 
                 var entity = new User
                 {
-                    Username      = request.Username,
-                    PasswordHash  = PasswordHasher.Hash(request.Password),
-                    RoleId        = request.RoleId,
-                    FirstName     = request.FirstName,
-                    LastName      = request.LastName,
-                    Email         = request.Email,
-                    ContactNumber = request.ContactNumber,
-                    CreatedAt     = DateTime.UtcNow,
+                    Username         = request.Username,
+                    PasswordHash     = PasswordHasher.Hash(request.Password),
+                    RoleId           = request.RoleId,
+                    FirstName        = request.FirstName,
+                    LastName         = request.LastName,
+                    Email            = request.Email,
+                    ContactNumber    = request.ContactNumber,
+                    Region           = request.Region,
+                    Province         = request.Province,
+                    CityMunicipality = request.CityMunicipality,
+                    Barangay         = request.Barangay,
+                    Street           = request.Street,
+                    CreatedAt        = DateTime.UtcNow,
                 };
 
                 await _repository.AddAsync(entity);
@@ -233,12 +243,17 @@ namespace Api.Controllers
                 if (existingEntity == null)
                     return NotFound(new { message = "User not found" });
 
-                existingEntity.FirstName     = request.FirstName;
-                existingEntity.LastName      = request.LastName;
-                existingEntity.Email         = request.Email;
-                existingEntity.ContactNumber = request.ContactNumber;
-                existingEntity.Username      = request.Username;
-                existingEntity.RoleId        = request.RoleId;
+                existingEntity.FirstName        = request.FirstName;
+                existingEntity.LastName         = request.LastName;
+                existingEntity.Email            = request.Email;
+                existingEntity.ContactNumber    = request.ContactNumber;
+                existingEntity.Region           = request.Region;
+                existingEntity.Province         = request.Province;
+                existingEntity.CityMunicipality = request.CityMunicipality;
+                existingEntity.Barangay         = request.Barangay;
+                existingEntity.Street           = request.Street;
+                existingEntity.Username         = request.Username;
+                existingEntity.RoleId           = request.RoleId;
                 if (!string.IsNullOrWhiteSpace(request.NewPassword))
                     existingEntity.PasswordHash = PasswordHasher.Hash(request.NewPassword);
 
@@ -310,14 +325,19 @@ namespace Api.Controllers
 
                 var entities = dataList.Select(item => new User
                 {
-                    Username      = item.Username,
-                    PasswordHash  = PasswordHasher.Hash(item.Password),
-                    RoleId        = item.RoleId,
-                    FirstName     = item.FirstName,
-                    LastName      = item.LastName,
-                    Email         = item.Email,
-                    ContactNumber = item.ContactNumber,
-                    CreatedAt     = DateTime.UtcNow,
+                    Username         = item.Username,
+                    PasswordHash     = PasswordHasher.Hash(item.Password),
+                    RoleId           = item.RoleId,
+                    FirstName        = item.FirstName,
+                    LastName         = item.LastName,
+                    Email            = item.Email,
+                    ContactNumber    = item.ContactNumber,
+                    Region           = item.Region,
+                    Province         = item.Province,
+                    CityMunicipality = item.CityMunicipality,
+                    Barangay         = item.Barangay,
+                    Street           = item.Street,
+                    CreatedAt        = DateTime.UtcNow,
                 }).ToList();
 
                 await _repository.BulkUploadAsync(entities);
